@@ -24,7 +24,6 @@ modules/                     reusable homelab.* modules (all opt-in)
 installer/                   PXE installer (RAM-only, carries the whole system)
 tests/pxe-install.nix        PXE boot -> install -> boot from disk, in QEMU
 tools/                       pxe-server (pixiecore) and pxe-vm (local QEMU)
-upstream/                    patches for the gorilla-blackout repo (image publishing)
 llm-jail.sh                  starts the Claude Code sandbox with enough RAM/disk for the test
 ```
 
@@ -102,18 +101,10 @@ account the laptop should join.
 
 ## 1. Publish the backend image
 
-The laptop pulls `ghcr.io/tonitert/gorilla-blackout-backend:latest`. To
-publish it, apply the two patches in the gorilla-blackout repo. The first adds
-a workflow that builds `backend/Dockerfile` on every push to `master` that
-touches `backend/`. The second pins pnpm 10 in that Dockerfile: the unpinned
-`npm install -g pnpm` now gets pnpm 11, which fails the build with
-`ERR_PNPM_IGNORED_BUILDS` (esbuild).
-
-```sh
-cd ~/src/gorilla-blackout
-git am ~/src/homelab/upstream/*.patch
-git push
-```
+The laptop pulls `ghcr.io/tonitert/gorilla-blackout-backend:latest`. The
+gorilla-blackout repo's *Publish backend image* workflow builds
+`backend/Dockerfile` and pushes it there on every push to `master` that
+touches `backend/`.
 
 Start the first run by hand (GitHub → gorilla-blackout → Actions →
 *Publish backend image* → Run workflow), or with
