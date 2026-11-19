@@ -1,0 +1,24 @@
+name: Check
+
+# Builds the laptop's NixOS system on every push, so a commit shows a red X
+# when the config doesn't build. The laptop pulls `main` either way (a
+# config that doesn't build changes nothing there), so this is just the
+# quickest place to see the error. The PXE install test isn't run here:
+# it needs several GB of RAM and about half an hour.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build blackout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - run: nix build .#checks.x86_64-linux.blackout --print-build-logs

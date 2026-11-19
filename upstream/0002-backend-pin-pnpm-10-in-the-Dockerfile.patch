@@ -1,0 +1,31 @@
+From 60ad9f658d386c0e223d458614e99bc091159777 Mon Sep 17 00:00:00 2001
+From: Toni <toni@tertsonen.xyz>
+Date: Thu, 19 Nov 2026 02:15:13 +0000
+Subject: [PATCH 2/2] backend: pin pnpm 10 in the Dockerfile
+
+`npm install -g pnpm` now installs pnpm 11, which fails the image build
+with ERR_PNPM_IGNORED_BUILDS (esbuild's build script is not approved).
+CI already uses pnpm 10 (pnpm/action-setup, version: 10); use the same
+major version in the image.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ backend/Dockerfile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/backend/Dockerfile b/backend/Dockerfile
+index ca83060..b8b41c0 100644
+--- a/backend/Dockerfile
++++ b/backend/Dockerfile
+@@ -1,7 +1,7 @@
+ FROM node:22-alpine
+ WORKDIR /app
+ 
+-RUN npm install -g pnpm
++RUN npm install -g pnpm@10
+ 
+ COPY package.json pnpm-lock.yaml ./
+ RUN pnpm install --frozen-lockfile
+-- 
+2.56.0
+

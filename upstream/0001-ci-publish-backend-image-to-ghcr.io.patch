@@ -1,0 +1,85 @@
+From cd989e99e9c720b6b75e0d481daea640d77e0d35 Mon Sep 17 00:00:00 2001
+From: Toni <toni@tertsonen.xyz>
+Date: Wed, 18 Nov 2026 23:52:10 +0000
+Subject: [PATCH] ci: publish backend image to ghcr.io
+
+Build backend/Dockerfile on pushes to master that touch the backend and
+push it as ghcr.io/<owner>/gorilla-blackout-backend (latest + sha tags),
+so servers can pull it instead of building from source.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .github/workflows/publish-backend-image.yml | 61 +++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+ create mode 100644 .github/workflows/publish-backend-image.yml
+
+diff --git a/.github/workflows/publish-backend-image.yml b/.github/workflows/publish-backend-image.yml
+new file mode 100644
+index 0000000..d6237da
+--- /dev/null
++++ b/.github/workflows/publish-backend-image.yml
+@@ -0,0 +1,61 @@
++name: Publish backend image
++
++# Builds backend/Dockerfile and pushes it to GitHub Container Registry as
++#   ghcr.io/<owner>/gorilla-blackout-backend:{latest,sha-<short>}
++# The frontend is deployed separately to Cloudflare Pages.
++
++on:
++  push:
++    branches:
++      - master
++    paths:
++      - 'backend/**'
++      - '.github/workflows/publish-backend-image.yml'
++  workflow_dispatch:
++
++permissions:
++  contents: read
++  packages: write
++
++concurrency:
++  group: publish-backend-image
++  cancel-in-progress: true
++
++jobs:
++  publish:
++    name: Build and push backend image
++    runs-on: ubuntu-latest
++    steps:
++      - name: Checkout
++        uses: actions/checkout@v4
++
++      - name: Set up Docker Buildx
++        uses: docker/setup-buildx-action@v3
++
++      - name: Log in to GitHub Container Registry
++        uses: docker/login-action@v3
++        with:
++          registry: ghcr.io
++          username: ${{ github.actor }}
++          password: ${{ secrets.GITHUB_TOKEN }}
++
++      - name: Image metadata
++        id: meta
++        uses: docker/metadata-action@v5
++        with:
++          images: ghcr.io/${{ github.repository_owner }}/gorilla-blackout-backend
++          tags: |
++            type=raw,value=latest,enable={{is_default_branch}}
++            type=sha
++
++      - name: Build and push
++        uses: docker/build-push-action@v6
++        with:
++          context: backend
++          file: backend/Dockerfile
++          platforms: linux/amd64
++          push: true
++          tags: ${{ steps.meta.outputs.tags }}
++          labels: ${{ steps.meta.outputs.labels }}
++          cache-from: type=gha,scope=backend
++          cache-to: type=gha,mode=max,scope=backend
+-- 
+2.56.0
+
